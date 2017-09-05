@@ -52,6 +52,12 @@
 
 using namespace std;
 
+//iagostorch begin
+//gcorrea 04/03/2014 
+extern int saveResData2Nx2N;
+//gcorrea 04/03/2014 END
+//iagostorch end
+
 //! \ingroup TAppEncoder
 //! \{
 
@@ -490,7 +496,7 @@ Void TAppEncTop::encode()
   xInitLibCfg();
   xCreateLib();
   xInitLib(m_isField);
-
+    
   printChromaFormat();
 
   // main encoder loop
@@ -503,7 +509,7 @@ Void TAppEncTop::encode()
   list<AccessUnit> outputAccessUnits; ///< list of access units to write out.  is populated by the encoding process
 
   TComPicYuv cPicYuvTrueOrg;
-
+    
   // allocate original YUV buffer
   if( m_isField )
   {
@@ -516,6 +522,14 @@ Void TAppEncTop::encode()
     cPicYuvTrueOrg.create(m_iSourceWidth, m_iSourceHeight, m_chromaFormatIDC, m_uiMaxCUWidth, m_uiMaxCUHeight, m_uiMaxTotalCUDepth, true );
   }
 
+    //iagostorch begin
+    //gcorrea 04/03/2014
+
+    saveResData2Nx2N = -1;
+
+    //gcorrea 04/03/2014 END
+    //iagostorch end
+    
 #if EXTENSION_360_VIDEO
   TExt360AppEncTop           ext360(*this, m_cTEncTop.getGOPEncoder()->getExt360Data(), *(m_cTEncTop.getGOPEncoder()), *pcPicYuvOrg);
 #endif

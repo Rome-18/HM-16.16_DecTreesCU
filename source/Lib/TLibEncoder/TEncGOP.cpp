@@ -52,6 +52,13 @@
 #include <deque>
 using namespace std;
 
+//iagostorch begin
+extern int totalDepths[150][4000][256];
+extern int *encodedFrames;
+void getPicData(TComPic *pic);  //functions to extract CTU information and save to file
+void writeCUData(TComDataCU *CU);
+//iagostorch end
+
 //! \ingroup TLibEncoder
 //! \{
 
@@ -1549,7 +1556,7 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
     const Int numSubstreamRows     = pcSlice->getPPS()->getEntropyCodingSyncEnabledFlag() ? pcPic->getFrameHeightInCtus() : (pcSlice->getPPS()->getNumTileRowsMinus1() + 1);
     const Int numSubstreams        = numSubstreamRows * numSubstreamsColumns;
     std::vector<TComOutputBitstream> substreamsOut(numSubstreams);
-
+    
     // now compress (trial encode) the various slice segments (slices, and dependent slices)
     {
       const UInt numberOfCtusInFrame=pcPic->getPicSym()->getNumberOfCtusInFrame();
@@ -1591,8 +1598,12 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
         }
         nextCtuTsAddr = curSliceSegmentEnd;
       }
-    }
-
+    //iagostorch begin  
+      getPicData(pcPic); //extracts CTU data, and updates the totalDepths array
+      encodedFrames[pcPic->getPOC()] = 1;
+    //iagostorch end
+    }  
+    
     duData.clear();
     pcSlice = pcPic->getSlice(0);
 
@@ -3156,5 +3167,87 @@ Void TEncGOP::applyDeblockingFilterParameterSelection( TComPic* pcPic, const UIn
     }
   }
 }
+
+//iagostorch BEGIN
+void getPicData(TComPic *pic){
+    int i;
+    for(i=0; i<pic->getNumberOfCtusInFrame(); i++){
+        //printf(">>CTU addr %d\n", i);
+        writeCUData(pic->getCtu(i));
+    }
+}
+
+void writeCUData(TComDataCU *CU){
+    int i=0, lenght=0, totalSize;
+    int *depth, *predMode, *partSize, *skipFlag;
+    int weightedSkip = 0;
+    
+    FILE* dadosCUs;
+    dadosCUs = fopen("CUs.csv", "a");
+    totalSize = CU->getTotalNumPart();
+    
+    depth = (int *) malloc(sizeof(int) * totalSize);
+    predMode = (int *) malloc(sizeof(int) * totalSize);
+    partSize = (int *) malloc(sizeof(int) * totalSize);
+    skipFlag = (int *) malloc(sizeof(int) * totalSize);
+    
+    //CTU number, X and Y position
+    fprintf(dadosCUs, "%d,%d,%d,",CU->getCtuRsAddr(), CU->getCUPelX(), CU->getCUPelY());
+
+    while(i < totalSize){
+        //extracts the data and saves in array
+        depth[lenght] = (int) CU->getDepth(i);
+        skipFlag[lenght] = (int) CU->getSkipFlag(i);
+        predMode[lenght] = (int) CU->getPredictionMode(i);
+        partSize[lenght] = (int) CU->getPartitionSize(i);
+        
+        weightedSkip = weightedSkip + skipFlag[lenght]*(64>>2*depth[lenght]);   //adjusts skips weights based on CU sizes
+                                                                                //8x8->1, 16x16->4, 32x32->16, 64x64->64
+        i = i + ((16>>depth[lenght]) * (16>>depth[lenght]));
+        lenght++;
+    }
+    
+    
+    int frameIdx = 0, ctuIdx = 0;
+    ctuIdx = CU->getCtuRsAddr();
+    frameIdx = CU->getSlice()->getPOC();
+    
+    //printf("POC %d\tCTU: %d\n", frameIdx, ctuIdx);
+    
+    for(i=0; i<totalSize; i++){
+        totalDepths[frameIdx][ctuIdx][i] = CU->getDepth(i); //updates totalDepths array
+    } 
+    
+    //number of CUs in the CTU, POC number
+    
+    fprintf(dadosCUs, "%d,%d\n", lenght, CU->getPic()->getPOC())    ;
+    
+    fprintf(dadosCUs, "%d", depth[0]);
+    for(i=1; i<lenght; i++){
+        fprintf(dadosCUs,",%d", depth[i]);
+    }
+    fprintf(dadosCUs,"\n");
+    
+    fprintf(dadosCUs, "%d", skipFlag[0]);
+    for(i=1; i<lenght; i++){
+        fprintf(dadosCUs,",%d", skipFlag[i]);
+    }
+    fprintf(dadosCUs,"\n");
+    
+    fprintf(dadosCUs, "%d", predMode[0]);
+    for(i=1; i<lenght; i++){
+        fprintf(dadosCUs,",%d", predMode[i]);
+    }
+    fprintf(dadosCUs,"\n");    
+
+    fprintf(dadosCUs, "%d", partSize[0]);
+    for(i=1; i<lenght; i++){
+        fprintf(dadosCUs,",%d", partSize[i]);
+    }
+    fprintf(dadosCUs,"\n");    
+    
+    fclose(dadosCUs);
+}
+//iagostorch end
 
 //! \}

@@ -52,6 +52,12 @@
 #define MACRO_TO_STRING_HELPER(val) #val
 #define MACRO_TO_STRING(val) MACRO_TO_STRING_HELPER(val)
 
+//iagostorch begin
+//variables to be initialized based on the cfg
+extern int *encodedFrames;
+extern int myGOPSize;
+//iagostorch end
+
 using namespace std;
 namespace po = df::program_options_lite;
 
@@ -1650,7 +1656,14 @@ Bool TAppEncCfg::parseCfg( Int argc, TChar* argv[] )
 
   // print-out parameters
   xPrintParameter();
-
+  
+  //iagostorch begin
+  encodedFrames = (int *) malloc(sizeof(int) * m_framesToBeEncoded); //allocs array size based on the passed cfg
+  for(int frame = 0; frame < m_framesToBeEncoded; frame++)           //initializes the array
+        encodedFrames[frame] = 0;
+  
+  myGOPSize = m_iGOPSize;
+  //iagostorch end
   return true;
 }
 

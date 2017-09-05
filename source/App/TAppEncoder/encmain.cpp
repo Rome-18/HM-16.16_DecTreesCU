@@ -45,6 +45,19 @@
 
 #include "../Lib/TLibCommon/Debug.h"
 
+//iagostorch begin
+//gcorrea 04/03/2014
+int saveResData2Nx2N;
+double RDcost_MSM, RDcost_2Nx2N, RDcost_2NxN, RDcost_Nx2N, RDcost_NxN, RDcost_2NxnU, RDcost_2NxnD, RDcost_nLx2N, RDcost_nRx2N;
+//gcorrea 04/03/2014 END
+
+int totalDepths[150][4000][256];
+//  totalDepths[frame][ctu_idx][sample]   //keeps the depth for each CU
+int *encodedFrames;
+//array indicating if a frame has already been encoded or not. 1 = encoded
+int myGOPSize;    //global variable to keep the gop size (used in the decision trees)
+//iagostorch end
+
 // ====================================================================================================================
 // Main function
 // ====================================================================================================================
@@ -100,10 +113,10 @@ int main(int argc, char* argv[])
   // ending time
   dResult = (Double)(clock()-lBefore) / CLOCKS_PER_SEC;
   printf("\n Total Time: %12.3f sec.\n", dResult);
-
+  
   // destroy application encoder class
   cTAppEncTop.destroy();
-
+ 
   return 0;
 }
 
