@@ -56,6 +56,11 @@ int totalDepths[150][4000][256];
 int *encodedFrames;
 //array indicating if a frame has already been encoded or not. 1 = encoded
 int myGOPSize;    //global variable to keep the gop size (used in the decision trees)
+
+//variables to count the time taken per tile and CU
+FILE *time_perCU, *time_perTile;
+double time_tile[100];  
+double timeAlgorithm=0;
 //iagostorch end
 
 // ====================================================================================================================
@@ -66,6 +71,13 @@ int main(int argc, char* argv[])
 {
   TAppEncTop  cTAppEncTop;
 
+  //iagostorch begin
+  //DANIEL BEGIN
+  time_perCU = fopen("time_perCU.txt","w");
+  time_perTile = fopen("time_perTile.csv","a");
+  //DANIEL END
+  //iagostorch end
+  
   // print information
   fprintf( stdout, "\n" );
   fprintf( stdout, "HM software: Encoder Version [%s] (including RExt)", NV_VERSION );
@@ -117,6 +129,10 @@ int main(int argc, char* argv[])
   // destroy application encoder class
   cTAppEncTop.destroy();
  
+  //iagostorch begin
+  fclose(time_perCU);
+  fclose(time_perTile);
+  //iagostorch end
   return 0;
 }
 

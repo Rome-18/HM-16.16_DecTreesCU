@@ -39,6 +39,14 @@
 #include "TEncSlice.h"
 #include <math.h>
 
+//iagostorch begin
+#include <sys/time.h>
+extern FILE *time_perCU;
+double time_compress_CU[1001];
+double time_compressEncode_CU[1001];    //IAGO SAVES THE TOTAL TIME PER CU
+extern double time_tile[100];
+//iagostorch end
+
 //! \ingroup TLibEncoder
 //! \{
 
@@ -791,7 +799,15 @@ Void TEncSlice::compressSlice( TComPic* pcPic, const Bool bCompressEntireSlice, 
 
   for( UInt ctuTsAddr = startCtuTsAddr; ctuTsAddr < boundingCtuTsAddr; ++ctuTsAddr )
   {
-    const UInt ctuRsAddr = pcPic->getPicSym()->getCtuTsToRsAddrMap(ctuTsAddr);
+      
+    //iagostorch begin
+    //DANIEL BEGIN
+    struct timeval  tv1, tv2;
+    gettimeofday(&tv1, NULL);
+    //DANIEL END
+    //iagostorch end
+      
+    const UInt ctuRsAddr = pcPic->getPicSym()->getCtuTsToRsAddrMap(ctuTsAddr);       
     // initialize CTU encoder
     TComDataCU* pCtu = pcPic->getCtu( ctuRsAddr );
     pCtu->initCtu( pcPic, ctuRsAddr );
@@ -959,6 +975,17 @@ Void TEncSlice::compressSlice( TComPic* pcPic, const Bool bCompressEntireSlice, 
     m_uiPicTotalBits += pCtu->getTotalBits();
     m_dPicRdCost     += pCtu->getTotalCost();
     m_uiPicDist      += pCtu->getTotalDistortion();
+    
+    //iagostorch begin
+    //DANIEL BEGIN
+    gettimeofday(&tv2, NULL);
+    time_compress_CU[ctuTsAddr] = (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+             (double) (tv2.tv_sec - tv1.tv_sec);
+    //  fprintf (time_perCU,"%f\n",
+    //             (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+    //             (double) (tv2.tv_sec - tv1.tv_sec));
+    //DANIEL END
+    //iagostorch end
   }
 
   // store context state at the end of this slice-segment, in case the next slice is a dependent slice and continues using the CABAC contexts.
@@ -1035,6 +1062,13 @@ Void TEncSlice::encodeSlice   ( TComPic* pcPic, TComOutputBitstream* pcSubstream
 
   for( UInt ctuTsAddr = startCtuTsAddr; ctuTsAddr < boundingCtuTsAddr; ++ctuTsAddr )
   {
+    //iagostorch begin
+    //DANIEL BEGIN
+    struct timeval  tv1, tv2;
+    gettimeofday(&tv1, NULL); 
+    //DANIEL END
+    //iagostorch end
+      
     const UInt ctuRsAddr = pcPic->getPicSym()->getCtuTsToRsAddrMap(ctuTsAddr);
     const TComTile &currentTile = *(pcPic->getPicSym()->getTComTile(pcPic->getPicSym()->getTileIdxMap(ctuRsAddr)));
     const UInt firstCtuRsAddrOfTile = currentTile.getFirstCtuRsAddr();
@@ -1144,6 +1178,26 @@ Void TEncSlice::encodeSlice   ( TComPic* pcPic, TComOutputBitstream* pcSubstream
         pcSlice->addSubstreamSize( (pcSubstreams[uiSubStrm].getNumberOfWrittenBits() >> 3) + pcSubstreams[uiSubStrm].countStartCodeEmulations() );
       }
     }
+    //iagostorch begin
+    //DANIEL BEGIN
+    gettimeofday(&tv2, NULL);
+    //get tile index
+    int tile_Idx=pcPic->getPicSym()->getTileIdxMap(ctuRsAddr);
+    //increment tile time with CU compress and encode times;
+    time_tile[tile_Idx] += time_compress_CU[ctuTsAddr] +
+    (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+    (double) (tv2.tv_sec - tv1.tv_sec);
+
+    //print time per CU
+    fprintf (time_perCU,"%d %f\n", pCtu->getCtuRsAddr() , time_compress_CU[ctuTsAddr] +
+    (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+    (double) (tv2.tv_sec - tv1.tv_sec));
+    time_compressEncode_CU[pCtu->getCtuRsAddr()] =  time_compress_CU[ctuTsAddr] +    //IAGO
+                                            (double) (tv2.tv_usec - tv1.tv_usec)/1000000 +
+                                            (double) (tv2.tv_sec - tv1.tv_sec);
+    //DANIEL END
+    //iagostorch end  
+  
   } // CTU-loop
 
   if( depSliceSegmentsEnabled )

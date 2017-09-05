@@ -57,6 +57,10 @@ extern int totalDepths[150][4000][256];
 extern int *encodedFrames;
 void getPicData(TComPic *pic);  //functions to extract CTU information and save to file
 void writeCUData(TComDataCU *CU);
+
+extern FILE *time_perTile;
+extern double time_tile[100];
+extern double time_compressEncode_CU[1001];    //SAVES THE TOTAL TIME PER CU   //IAGO
 //iagostorch end
 
 //! \ingroup TLibEncoder
@@ -1135,6 +1139,14 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
 
   for ( Int iGOPid=0; iGOPid < m_iGopSize; iGOPid++ )
   {
+        
+    //iagostorch begin    
+    //DANIEL BEGIN
+    for(int i=0; i<100;i++)
+        time_tile[i]=0;
+    //DANIEL END
+    //iagostorch end
+    
     if (m_pcCfg->getEfficientFieldIRAPEnabled())
     {
       iGOPid=effFieldIRAPMap.adjustGOPid(iGOPid);
@@ -2360,6 +2372,21 @@ Void TEncGOP::xCalculateAddPSNR( TComPic* pcPic, TComPicYuv* pcPicD, const Acces
          uibits );
 #endif
 
+  
+   //iagostorch begin
+    //DANIEL BEGIN
+  
+  for(int i=0; i<100;i++) {
+        if(time_tile[i]>0) {
+            fprintf(time_perTile,"%f,",time_tile[i]);
+        }
+    }
+    fprintf(time_perTile,"%6.4lf,%10d,\n",dPSNR[COMPONENT_Y], uibits );
+   // fprintf(time_perTile,"\n");
+    //DANIEL END
+    //iagostorch end
+  
+  
   printf(" [Y %6.4lf dB    U %6.4lf dB    V %6.4lf dB]", dPSNR[COMPONENT_Y], dPSNR[COMPONENT_Cb], dPSNR[COMPONENT_Cr] );
 #if JVET_F0064_MSSSIM
   if (printMSSSIM)
