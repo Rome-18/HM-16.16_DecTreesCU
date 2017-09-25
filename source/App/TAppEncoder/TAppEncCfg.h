@@ -67,7 +67,7 @@ public:
   };
 #endif
 
-protected:
+protected:   
   // file I/O
   std::string m_inputFileName;                                ///< source file name
   std::string m_bitstreamFileName;                            ///< output bitstream file

@@ -61,6 +61,11 @@ int myGOPSize;    //global variable to keep the gop size (used in the decision t
 FILE *time_perCU, *time_perTile;
 double time_tile[100];  
 double timeAlgorithm=0;
+
+//iagostorch begin
+Int      iagoCUDecTree;                                    ///< Custom encoding parameter. Enables the CU decision trees
+//iagostorch end
+
 //iagostorch end
 
 // ====================================================================================================================

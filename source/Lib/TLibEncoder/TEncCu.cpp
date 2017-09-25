@@ -56,6 +56,9 @@ extern double RDcost_MSM, RDcost_2Nx2N, RDcost_2NxN, RDcost_Nx2N, RDcost_NxN, RD
 extern int myGOPSize;
 extern int *encodedFrames;
 extern int totalDepths[150][4000][256];
+
+
+extern Int iagoCUDecTree;
 //iagostorch end
 
 //! \ingroup TLibEncoder
@@ -856,13 +859,16 @@ Void TEncCu::xCompressCU( TComDataCU*& rpcBestCU, TComDataCU*& rpcTempCU, const 
   }
 
   //iagostorch begin
+  int split = 1;
+  if(iagoCUDecTree == 1){   //if decision tree is enabled
+  //printf ("DecTree enabled\n");
   //gcorrea: 03/03/2014
   int mode = rpcBestCU->getPredictionMode( 0 );
   int part = rpcBestCU->getPartitionSize( 0 );
   
   double diff_NeiDepth = 0;
 
-  int split = 1;
+  
 
   if(mode == 0) {
 
@@ -1324,12 +1330,17 @@ Void TEncCu::xCompressCU( TComDataCU*& rpcBestCU, TComDataCU*& rpcTempCU, const 
 
   }
   //gcorrea: 03/03/2014 END
+  }
+  else{ //if decision tree is disabled
+      split = 1;
+      //printf("DecTree disabled\n");
+  }
   //iagostorch end
   
   const Bool bSubBranch = bBoundary || !( m_pcEncCfg->getUseEarlyCU() && rpcBestCU->getTotalCost()!=MAX_DOUBLE && rpcBestCU->isSkipped(0) );
 
    //iagostorch begin
-   // gcorrea: 04/03/2014
+   // gcorrea: 04/03/2014  
    if(split == 1) {
    // gcorrea: 04/03/2014 END
    //iagostorch end

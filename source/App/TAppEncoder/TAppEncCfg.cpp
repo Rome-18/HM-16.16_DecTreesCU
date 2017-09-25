@@ -56,6 +56,8 @@
 //variables to be initialized based on the cfg
 extern int *encodedFrames;
 extern int myGOPSize;
+  
+extern Int      iagoCUDecTree;                 ///< Enables the CU decision trees
 //iagostorch end
 
 using namespace std;
@@ -696,6 +698,10 @@ Bool TAppEncCfg::parseCfg( Int argc, TChar* argv[] )
   ("WarnUnknowParameter,w",                           warnUnknowParameter,                                  0, "warn for unknown configuration parameters instead of failing")
 
   // File, I/O and source parameters
+  //iagostorch begin    //custom encoding parameters
+  ("IagoCUDecTree",                                  iagoCUDecTree,                                         0, "Enables the CU decision trees. 0 = disabled")
+  //iagostorch end
+  
   ("InputFile,i",                                     m_inputFileName,                             string(""), "Original YUV input file name")
   ("BitstreamFile,b",                                 m_bitstreamFileName,                         string(""), "Bitstream output file name")
   ("ReconFile,o",                                     m_reconFileName,                             string(""), "Reconstructed YUV output file name")
